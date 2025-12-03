@@ -57,6 +57,8 @@ void setup() {
   } 
   else {
     MY_ADDR = 64; // fallback
+    Serial.print("USING FALLBACK ADDR");
+
   }
 
   pinMode(LED, OUTPUT);
@@ -92,16 +94,16 @@ void loop() {
 void sendMessage() {
   digitalWrite(LED, HIGH);
 
-  int soil_value;
+  int soil_valueS1, soil_valueS2, soil_valueS3;
 
   // Soil readings
-  read_soil_rh(SENSOR_1_PIN, soil_value);
+  read_soil_rh(SENSOR_1_PIN, soil_valueS1);
   slug.r1.value = soil_value;
 
-  read_soil_rh(SENSOR_2_PIN, soil_value);
+  read_soil_rh(SENSOR_2_PIN, soil_valueS2);
   slug.r2.value = soil_value;
 
-  read_soil_rh(SENSOR_3_PIN, soil_value);
+  read_soil_rh(SENSOR_3_PIN, soil_valueS3);
   slug.r3.value = soil_value;
 
   // Battery
@@ -113,7 +115,6 @@ void sendMessage() {
   Serial.print("Soil3: "); Serial.println(slug.r3.value);
   Serial.print("Battery OK: "); Serial.println(slug.has_power);
   Serial.print("My Address: "); Serial.println(MY_ADDR);
-  Serial.print("Bytes Encoded: "); Serial.println(pbout.bytes_written);
 
   // Encode protobuf into tosend.data
   pbout = pb_ostream_from_buffer(tosend.data, sizeof(tosend.data));
@@ -121,6 +122,9 @@ void sendMessage() {
     digitalWrite(LED, LOW);
     return;
   }
+  //debug
+  Serial.print("Bytes Encoded: "); Serial.println(pbout.bytes_written);
+
 
   // Update header
   tosend.myaddr = MY_ADDR;
@@ -135,8 +139,10 @@ void sendMessage() {
       pbout.bytes_written;
 
   // Send it
+  //FLASHING LED ON SEND TO INDICATE TRANSMITTING
+  digitalWrite(LED, HIGH);
   rf95.send((uint8_t*)&tosend, total_len);
   rf95.waitPacketSent();
-
+  //fllash led
   digitalWrite(LED, LOW);
 }
