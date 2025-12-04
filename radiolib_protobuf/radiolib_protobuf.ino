@@ -2,13 +2,21 @@
 #include <TaskScheduler.h>
 #include "sensor_readings.pb.h"
 #include "lorafeather_pins.h"
+#include "readsoil.h"
+#include "Adafruit_EEPROM_I2C.h"
+
+
+
+#define SENSOR_1_PIN A0
+#define SENSOR_2_PIN A1
+#define SENSOR_3_PIN A2
+#define BATTERY_PIN A3
 
 #define RFM95_FREQ 915.0
 #define SEND_DURATION 2*TASK_SECOND
 
 // Uncomment this to use serial print debugging
 //#define SERIAL_DEBUG
-#include "Adafruit_EEPROM_I2C.h"
 Adafruit_EEPROM_I2C i2ceeprom;
 uint8_t MY_ADDR;
 // Note: pin defines pulled out into header
@@ -59,23 +67,19 @@ void setup() {
   // To avoid serial and external boards, use LED on pin 13
   if (status != 0) debugflash(100);
   // Initialize the ReadingSlug with the reading types
-  tosend.myaddr = 10;
+  tosend.myaddr = MY_ADDR;
 
-  float soil_valueS1, soil_valueS2, soil_valueS3;
 
   //PROTOBUF FIELDS
-  slug.has_power = true;
   slug.has_r1 = true;
   slug.r1.type = ReadingType_REL_HUMID;
-  slug.r1.value = soil_valueS1;
 
   slug.has_r2 = true;
   slug.r2.type = ReadingType_REL_HUMID;
-  slug.r2.value = soil_valueS2;
 
   slug.has_r3 = true;
   slug.r3.type = ReadingType_REL_HUMID;
-  slug.r3.value = soil_valueS3;
+
 
 }
 
@@ -105,16 +109,16 @@ void debugflash(int del)
 void read_and_send()
 {
 
-  float soil_valueS1, soil_valueS2, soil_valueS3;
+  float soil1, soil2, soil3;
   // read stuff here
-  read_soil_rh(SENSOR_1_PIN, soil_valueS1);
-  slug.r1.value = soil_valueS1;
+  read_soil_rh(SENSOR_1_PIN, soil1);
+  read_soil_rh(SENSOR_2_PIN, soil2);
+  read_soil_rh(SENSOR_3_PIN, soil3);
 
-  read_soil_rh(SENSOR_2_PIN, soil_valueS2);
-  slug.r2.value = soil_valueS2;
+  slug.r1.value = soil1;
+  slug.r2.value = soil2;
+  slug.r3.value = soil3;
 
-  read_soil_rh(SENSOR_3_PIN, soil_valueS3);
-  slug.r3.value = soil_valueS3;
   //Debug tests
   Serial.print("Soil1: "); Serial.println(slug.r1.value);
   Serial.print("Soil2: "); Serial.println(slug.r2.value);
@@ -122,14 +126,30 @@ void read_and_send()
   Serial.print("Battery OK: "); Serial.println(slug.has_power);
   Serial.print("My Address: "); Serial.println(MY_ADDR);
 
+  // Increment message counter
   tosend.message_id++;
-  pbout = pb_ostream_from_buffer(tosend.data, 64);
-  pb_encode(&pbout, ReadingSlug_fields, &slug);
-  
-  debug("PB encoded size", String(pbout.bytes_written));
 
-  int status = radio.transmit((uint8_t *)&tosend, pbout.bytes_written+HEADER_LEN);
-  debug("Bytes sent", String(pbout.bytes_written+HEADER_LEN));
-  debug("Transmit status code", String(status));
+// Build packet buffer
+  uint8_t buffer[66];   // 2-byte header + protobuf (max 64)
+
+// Header bytes
+  buffer[0] = MY_ADDR;            // sensor address
+  buffer[1] = tosend.message_id;  // incrementing counter
+
+// Encode protobuf AFTER the first 2 bytes
+  pb_ostream_t s = pb_ostream_from_buffer(buffer + 2, 64);
+
+  if (!pb_encode(&s, ReadingSlug_fields, &slug)) {
+    debug("PB encode error", "Failed");
+   return;
+}
+
+  int bytes_to_send = s.bytes_written + 2;
+
+  // Send the packet
+  int status = radio.transmit(buffer, bytes_to_send);
+  debug("Bytes sent", String(bytes_to_send));
+  debug("Transmit status", String(status));
+
 
 }
