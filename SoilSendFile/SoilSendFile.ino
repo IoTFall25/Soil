@@ -1,6 +1,6 @@
 #include "sensor_readings.pb.h"
-#include <RH_RF95.h>
-#include <RHReliableDatagram.h>
+#include <RadioLib.h>
+RFM95 radio = new Module(RFM95_CS, RFM95_INT, RFM95_RST);
 #include <TaskScheduler.h>
 #include "readsoil.h"
 
@@ -34,8 +34,9 @@ struct message {
     uint8_t hop_count = 0;
     uint8_t data[64];
 };
-message tosend;
 
+//variables for sending
+message tosend;
 ReadingSlug slug;
 pb_ostream_t pbout;
 
