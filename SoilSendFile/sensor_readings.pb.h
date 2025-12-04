@@ -17,6 +17,7 @@ typedef enum _ReadingType {
     ReadingType_LIGHT = 3,
     ReadingType_PH = 4,
     ReadingType_EC = 5
+    ReadingTyper_SoilM = 6
 } ReadingType;
 
 /* Struct definitions */

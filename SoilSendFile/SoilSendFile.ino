@@ -76,12 +76,16 @@ void setup() {
 
   // --- Protobuf fields ---
   slug.has_r1 = true;
-  slug.has_r2 = true;
-  slug.has_r3 = true;
+  slug.r1.type = ReadingType_SoilM;
+  slug.r1.value = soil_value1;
 
-  slug.r1.type = ReadingType_TEMP;       // Soil 1
-  slug.r2.type = ReadingType_NOTUSED;    // Soil 2
-  slug.r3.type = ReadingType_NOTUSED;    // Soil 3
+  slug.has_r2 = true;
+  slug.r2.type = ReadingType_SoilM;
+  slug.r2.value = soil_value2;
+
+  slug.has_r3 = true;
+  slug.r3.type = ReadingType_SoilM;
+  slug.r3.value = soil_value3;
 
   taskManager.addTask(radioTask);
   radioTask.enable();
@@ -94,17 +98,17 @@ void loop() {
 void sendMessage() {
   digitalWrite(LED, HIGH);
 
-  int soil_valueS1, soil_valueS2, soil_valueS3;
+  float soil_valueS1, soil_valueS2, soil_valueS3;
 
   // Soil readings
   read_soil_rh(SENSOR_1_PIN, soil_valueS1);
-  slug.r1.value = soil_value;
+  slug.r1.value = soil_valueS1;
 
   read_soil_rh(SENSOR_2_PIN, soil_valueS2);
-  slug.r2.value = soil_value;
+  slug.r2.value = soil_valueS2;
 
   read_soil_rh(SENSOR_3_PIN, soil_valueS3);
-  slug.r3.value = soil_value;
+  slug.r3.value = soil_valueS3;
 
   // Battery
   slug.has_power = (analogRead(BATTERY_PIN) >= 200);
