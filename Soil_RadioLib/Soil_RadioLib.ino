@@ -4,7 +4,9 @@
 #include "lorafeather_pins.h"
 #include "readsoil.h"
 #include "Adafruit_EEPROM_I2C.h"
-
+#include "VisualIndicator.h"
+#include <Adafruit_SSD1306.h>
+#include <Adafruit_GFX.h>
 
 
 #define SENSOR_1_PIN A0
@@ -13,8 +15,11 @@
 #define BATTERY_PIN A3
 
 #define RFM95_FREQ 915.0
-#define SEND_DURATION 100*TASK_SECOND
+#define SEND_DURATION 300*TASK_SECOND
 
+
+//oled screen
+//Adafruit_SSD1306 oled(128, 64, &Wire);
 // Uncomment this to use serial print debugging
 //#define SERIAL_DEBUG
 Adafruit_EEPROM_I2C i2ceeprom;
@@ -46,6 +51,7 @@ Task sendtask(SEND_DURATION, TASK_FOREVER, read_and_send, &ts, true);
 
 void setup() {
   // Ignore this, it's just for making sure stuff is working
+  setupVI();
   #ifdef SERIAL_DEBUG
   Serial.begin(115200);
   #endif
@@ -125,6 +131,7 @@ void read_and_send()
   Serial.println("Soil at " + String(MY_ADDR) + ": " + String(slug.r3.value));
   Serial.print("Battery OK: "); Serial.println(slug.has_power);
   Serial.print("My Address: "); Serial.println(MY_ADDR);
+  
 
   // Increment message counter
   tosend.message_id++;
@@ -148,6 +155,13 @@ void read_and_send()
 
   // Send the packet
   int status = radio.transmit(buffer, bytes_to_send);
+  if (status == 0) {
+        //sending succeeded
+        sendingVI();
+    }
+    else{
+        sendingFail();
+    }
   debug("Bytes sent", String(bytes_to_send));
   debug("Transmit status", String(status));
 
