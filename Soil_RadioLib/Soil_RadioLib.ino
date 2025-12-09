@@ -13,7 +13,7 @@
 #define BATTERY_PIN A3
 
 #define RFM95_FREQ 915.0
-#define SEND_DURATION 2*TASK_SECOND
+#define SEND_DURATION 100*TASK_SECOND
 
 // Uncomment this to use serial print debugging
 //#define SERIAL_DEBUG
@@ -120,9 +120,9 @@ void read_and_send()
   slug.r3.value = soil3;
 
   //Debug tests
-  Serial.print("Soil1: "); Serial.println(slug.r1.value);
-  Serial.print("Soil2: "); Serial.println(slug.r2.value);
-  Serial.print("Soil3: "); Serial.println(slug.r3.value);
+  Serial.println("Soil at " + String(MY_ADDR) + ": " + String(slug.r1.value));
+  Serial.println("Soil at " + String(MY_ADDR) + ": " + String(slug.r2.value));
+  Serial.println("Soil at " + String(MY_ADDR) + ": " + String(slug.r3.value));
   Serial.print("Battery OK: "); Serial.println(slug.has_power);
   Serial.print("My Address: "); Serial.println(MY_ADDR);
 

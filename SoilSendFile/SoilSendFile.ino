@@ -1,6 +1,6 @@
 #include "sensor_readings.pb.h"
-#include <RadioLib.h>
-RFM95 radio = new Module(RFM95_CS, RFM95_INT, RFM95_RST);
+#include <RH_RF95.h>
+#include <RHReliableDatagram.h>
 #include <TaskScheduler.h>
 #include "readsoil.h"
 
@@ -27,7 +27,7 @@ uint8_t MY_ADDR;
 // --- Radio ---
 RH_RF95 rf95(RFM95_CS, RFM95_INT);
 
-// EXACT SAME STRUCT AS MESH
+// Message struct like mesh
 struct message {
     uint8_t myaddr = MY_ADDR;
     uint8_t message_id = 0;
@@ -36,6 +36,10 @@ struct message {
 };
 
 //variables for sending
+float soil_valueS1 = 0;
+float soil_valueS2 = 0;
+float soil_valueS3 = 0;
+
 message tosend;
 ReadingSlug slug;
 pb_ostream_t pbout;
@@ -75,18 +79,19 @@ void setup() {
 
   rf95.setTxPower(23, false);
 
+
   // --- Protobuf fields ---
   slug.has_r1 = true;
-  slug.r1.type = ReadingType_SoilM;
-  slug.r1.value = soil_value1;
+  slug.r1.type = ReadingType_REL_HUMID;
+  slug.r1.value = soil_valueS1;
 
   slug.has_r2 = true;
-  slug.r2.type = ReadingType_SoilM;
-  slug.r2.value = soil_value2;
+  slug.r2.type = ReadingType_REL_HUMID;
+  slug.r2.value = soil_valueS2;
 
   slug.has_r3 = true;
-  slug.r3.type = ReadingType_SoilM;
-  slug.r3.value = soil_value3;
+  slug.r3.type = ReadingType_REL_HUMID;
+  slug.r3.value = soil_valueS3;
 
   taskManager.addTask(radioTask);
   radioTask.enable();
@@ -99,7 +104,6 @@ void loop() {
 void sendMessage() {
   digitalWrite(LED, HIGH);
 
-  float soil_valueS1, soil_valueS2, soil_valueS3;
 
   // Soil readings
   read_soil_rh(SENSOR_1_PIN, soil_valueS1);
